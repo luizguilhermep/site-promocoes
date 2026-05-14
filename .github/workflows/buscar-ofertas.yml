@@ -1,0 +1,27 @@
+name: Buscar Ofertas ML
+
+on:
+  schedule:
+    - cron: '0 12 * * *'  # Todo dia ao meio-dia UTC (9h BRT)
+  workflow_dispatch:        # Permite rodar manualmente no GitHub
+
+jobs:
+  buscar-ofertas:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout do repositório
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Instalar dependências
+        run: npm install @supabase/supabase-js
+
+      - name: Buscar e inserir ofertas
+        run: node scripts/buscar-ofertas.js
+        env:
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}

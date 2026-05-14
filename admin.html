@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin — PromoHub</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #0f0f13; --surface: #1a1a24; --border: #2a2a3a;
+      --accent: #6c63ff; --text: #e8e8f0; --muted: #888899;
+      --green: #22c55e; --red: #ef4444; --radius: 10px;
+    }
+    body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', system-ui, sans-serif; min-height: 100vh; }
+
+    /* LOGIN */
+    .login-wrap { display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 24px; }
+    .login-box { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 40px; width: 100%; max-width: 400px; }
+    .login-box h1 { font-size: 1.5rem; margin-bottom: 8px; }
+    .login-box p { color: var(--muted); font-size: 0.875rem; margin-bottom: 28px; }
+
+    /* LAYOUT ADMIN */
+    .admin-layout { display: none; min-height: 100vh; }
+    .admin-layout.visible { display: flex; flex-direction: column; }
+    .admin-header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 0 24px; height: 60px; display: flex; align-items: center; justify-content: space-between; }
+    .admin-header .logo { font-size: 1.1rem; font-weight: 700; }
+    .admin-header .logo span { color: var(--accent); }
+    .admin-body { max-width: 1100px; margin-inline: auto; padding: 32px 24px; width: 100%; }
+
+    /* FORM */
+    .card-form { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 28px; margin-bottom: 32px; }
+    .card-form h2 { font-size: 1rem; font-weight: 700; margin-bottom: 20px; }
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .form-full { grid-column: 1 / -1; }
+    label { font-size: 0.78rem; color: var(--muted); display: block; margin-bottom: 6px; font-weight: 600; text-transform: uppercase; letter-spacing: .5px; }
+    input, textarea, select {
+      width: 100%; background: var(--bg); border: 1px solid var(--border);
+      border-radius: 8px; padding: 10px 12px; color: var(--text);
+      font-size: 0.875rem; font-family: inherit; outline: none; transition: border-color .2s;
+    }
+    input:focus, textarea:focus, select:focus { border-color: var(--accent); }
+    textarea { resize: vertical; min-height: 80px; }
+    select option { background: #1a1a24; }
+
+    /* BOTÕES */
+    .btn { padding: 10px 20px; border-radius: 8px; border: none; font-size: 0.875rem; font-weight: 600; cursor: pointer; transition: opacity .2s; }
+    .btn:hover { opacity: .85; }
+    .btn-primary { background: var(--accent); color: #fff; }
+    .btn-danger { background: var(--red); color: #fff; padding: 6px 12px; font-size: 0.78rem; }
+    .btn-ghost { background: transparent; color: var(--muted); border: 1px solid var(--border); }
+    .btn-sm { padding: 6px 14px; font-size: 0.78rem; }
+
+    .form-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; }
+
+    /* LISTA */
+    .lista-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+    .lista-header h2 { font-size: 1rem; font-weight: 700; }
+    .badge { background: rgba(108,99,255,.2); color: var(--accent); border-radius: 999px; padding: 2px 10px; font-size: 0.75rem; font-weight: 700; }
+
+    table { width: 100%; border-collapse: collapse; }
+    th { text-align: left; font-size: 0.72rem; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; padding: 10px 12px; border-bottom: 1px solid var(--border); }
+    td { padding: 14px 12px; border-bottom: 1px solid var(--border); font-size: 0.875rem; vertical-align: middle; }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: rgba(255,255,255,.02); }
+
+    .status-on { color: var(--green); font-size: 0.78rem; font-weight: 600; }
+    .status-off { color: var(--muted); font-size: 0.78rem; }
+    .td-actions { display: flex; gap: 8px; }
+
+    .alert { padding: 12px 16px; border-radius: 8px; font-size: 0.85rem; margin-bottom: 16px; }
+    .alert-success { background: rgba(34,197,94,.1); color: var(--green); border: 1px solid rgba(34,197,94,.2); }
+    .alert-error { background: rgba(239,68,68,.1); color: var(--red); border: 1px solid rgba(239,68,68,.2); }
+
+    .spinner { width: 20px; height: 20px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin .7s linear infinite; display: inline-block; vertical-align: middle; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    @media (max-width: 640px) { .form-grid { grid-template-columns: 1fr; } table { font-size: 0.78rem; } }
+  </style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div class="login-wrap" id="loginWrap">
+  <div class="login-box">
+    <h1>Promo<span style="color:#6c63ff">Hub</span> Admin</h1>
+    <p>Entre com seu e-mail e senha para gerenciar as ofertas.</p>
+    <div id="loginAlert"></div>
+    <div style="display:flex;flex-direction:column;gap:14px;">
+      <div>
+        <label>E-mail</label>
+        <input type="email" id="loginEmail" placeholder="seu@email.com" />
+      </div>
+      <div>
+        <label>Senha</label>
+        <input type="password" id="loginSenha" placeholder="••••••••" />
+      </div>
+      <button class="btn btn-primary" onclick="entrar()" id="btnEntrar">Entrar</button>
+    </div>
+  </div>
+</div>
+
+<!-- PAINEL ADMIN -->
+<div class="admin-layout" id="adminLayout">
+  <header class="admin-header">
+    <div class="logo">Promo<span>Hub</span> <span style="color:#888899;font-weight:400;font-size:.85rem">· Admin</span></div>
+    <div style="display:flex;gap:12px;align-items:center;">
+      <a href="index.html" class="btn btn-ghost btn-sm" target="_blank">Ver site →</a>
+      <button class="btn btn-ghost btn-sm" onclick="sair()">Sair</button>
+    </div>
+  </header>
+
+  <div class="admin-body">
+    <div id="alertGlobal"></div>
+
+    <!-- FORMULÁRIO -->
+    <div class="card-form">
+      <h2 id="formTitulo">➕ Nova oferta</h2>
+      <input type="hidden" id="editId" />
+      <div class="form-grid">
+        <div>
+          <label>Loja *</label>
+          <input id="fLoja" placeholder="Ex: Amazon" />
+        </div>
+        <div>
+          <label>Desconto</label>
+          <input id="fDesconto" placeholder="Ex: 30% OFF ou R$15 OFF" />
+        </div>
+        <div class="form-full">
+          <label>Título *</label>
+          <input id="fTitulo" placeholder="Ex: Fone JBL com 30% de desconto" />
+        </div>
+        <div class="form-full">
+          <label>Descrição</label>
+          <textarea id="fDescricao" placeholder="Detalhes da oferta…"></textarea>
+        </div>
+        <div>
+          <label>Cupom</label>
+          <input id="fCupom" placeholder="Ex: FONE30" style="text-transform:uppercase" />
+        </div>
+        <div>
+          <label>Categoria</label>
+          <select id="fCategoria">
+            <option value="">Selecione…</option>
+            <option>Eletrônicos</option>
+            <option>Moda</option>
+            <option>Alimentação</option>
+            <option>Viagem</option>
+            <option>Saúde & Beleza</option>
+            <option>Casa & Deco</option>
+            <option>Cursos</option>
+            <option>Variado</option>
+          </select>
+        </div>
+        <div class="form-full">
+          <label>Link afiliado *</label>
+          <input id="fLink" placeholder="https://…" type="url" />
+        </div>
+        <div class="form-full">
+          <label>URL da imagem da loja</label>
+          <input id="fImagem" placeholder="https://… (opcional)" type="url" />
+        </div>
+        <div>
+          <label>Status</label>
+          <select id="fAtivo">
+            <option value="true">✅ Ativo</option>
+            <option value="false">⏸ Inativo</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-actions">
+        <button class="btn btn-ghost" onclick="limparForm()">Cancelar</button>
+        <button class="btn btn-primary" id="btnSalvar" onclick="salvar()">Salvar oferta</button>
+      </div>
+    </div>
+
+    <!-- LISTA -->
+    <div>
+      <div class="lista-header">
+        <h2>Ofertas cadastradas <span class="badge" id="totalBadge">0</span></h2>
+      </div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:auto;">
+        <table id="tabelaOfertas">
+          <thead>
+            <tr>
+              <th>Loja</th>
+              <th>Título</th>
+              <th>Cupom</th>
+              <th>Desconto</th>
+              <th>Categoria</th>
+              <th>Status</th>
+              <th>Ações</th>
+            </tr>
+          </thead>
+          <tbody id="tabelaBody">
+            <tr><td colspan="7" style="text-align:center;color:var(--muted);padding:32px"><div class="spinner"></div></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const SUPABASE_URL = 'https://jlvbbvvxwowarjsgoppn.supabase.co'
+  const SUPABASE_KEY = 'sb_publishable__gnY7mCOaKb5KEglMiDvbw_BxEfWDuO'
+  const { createClient } = supabase
+  const db = createClient(SUPABASE_URL, SUPABASE_KEY)
+
+  // AUTH
+  async function entrar() {
+    const email = document.getElementById('loginEmail').value.trim()
+    const senha = document.getElementById('loginSenha').value
+    const btn = document.getElementById('btnEntrar')
+    btn.innerHTML = '<div class="spinner"></div>'
+    btn.disabled = true
+
+    const { error } = await db.auth.signInWithPassword({ email, password: senha })
+    if (error) {
+      document.getElementById('loginAlert').innerHTML = `<div class="alert alert-error">E-mail ou senha incorretos.</div>`
+      btn.textContent = 'Entrar'
+      btn.disabled = false
+    } else {
+      mostrarAdmin()
+    }
+  }
+
+  async function sair() {
+    await db.auth.signOut()
+    document.getElementById('adminLayout').classList.remove('visible')
+    document.getElementById('loginWrap').style.display = 'flex'
+  }
+
+  async function verificarSessao() {
+    const { data } = await db.auth.getSession()
+    if (data.session) mostrarAdmin()
+  }
+
+  function mostrarAdmin() {
+    document.getElementById('loginWrap').style.display = 'none'
+    document.getElementById('adminLayout').classList.add('visible')
+    carregarOfertas()
+  }
+
+  // LOGIN com Enter
+  document.getElementById('loginSenha').addEventListener('keydown', e => { if (e.key === 'Enter') entrar() })
+
+  // CRUD
+  async function carregarOfertas() {
+    const { data, error } = await db.from('promocoes').select('*').order('criado_em', { ascending: false })
+    if (error) { mostrarAlerta('Erro ao carregar ofertas.', 'error'); return }
+    renderTabela(data || [])
+  }
+
+  function renderTabela(lista) {
+    document.getElementById('totalBadge').textContent = lista.length
+    const tbody = document.getElementById('tabelaBody')
+    if (!lista.length) {
+      tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:32px">Nenhuma oferta cadastrada ainda.</td></tr>`
+      return
+    }
+    tbody.innerHTML = lista.map(p => `
+      <tr>
+        <td><strong>${p.loja}</strong></td>
+        <td style="max-width:220px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${p.titulo}</td>
+        <td><code style="color:#6c63ff">${p.cupom || '—'}</code></td>
+        <td>${p.desconto || '—'}</td>
+        <td>${p.categoria || '—'}</td>
+        <td>${p.ativo ? '<span class="status-on">● Ativo</span>' : '<span class="status-off">● Inativo</span>'}</td>
+        <td>
+          <div class="td-actions">
+            <button class="btn btn-sm btn-ghost" onclick="editarOferta('${p.id}')">Editar</button>
+            <button class="btn btn-sm btn-danger" onclick="deletarOferta('${p.id}')">Excluir</button>
+          </div>
+        </td>
+      </tr>`).join('')
+  }
+
+  async function salvar() {
+    const id = document.getElementById('editId').value
+    const loja = document.getElementById('fLoja').value.trim()
+    const titulo = document.getElementById('fTitulo').value.trim()
+    const link = document.getElementById('fLink').value.trim()
+
+    if (!loja || !titulo || !link) { mostrarAlerta('Preencha os campos obrigatórios: Loja, Título e Link.', 'error'); return }
+
+    const payload = {
+      loja, titulo, link_afiliado: link,
+      descricao: document.getElementById('fDescricao').value.trim() || null,
+      cupom: document.getElementById('fCupom').value.trim().toUpperCase() || null,
+      desconto: document.getElementById('fDesconto').value.trim() || null,
+      categoria: document.getElementById('fCategoria').value || null,
+      imagem_url: document.getElementById('fImagem').value.trim() || null,
+      ativo: document.getElementById('fAtivo').value === 'true',
+    }
+
+    const btn = document.getElementById('btnSalvar')
+    btn.innerHTML = '<div class="spinner" style="border-top-color:#fff"></div>'
+    btn.disabled = true
+
+    let error
+    if (id) {
+      ({ error } = await db.from('promocoes').update(payload).eq('id', id))
+    } else {
+      ({ error } = await db.from('promocoes').insert(payload))
+    }
+
+    btn.textContent = 'Salvar oferta'
+    btn.disabled = false
+
+    if (error) { mostrarAlerta('Erro ao salvar: ' + error.message, 'error'); return }
+
+    mostrarAlerta(id ? 'Oferta atualizada com sucesso!' : 'Oferta criada com sucesso!', 'success')
+    limparForm()
+    carregarOfertas()
+  }
+
+  let _ofertas = []
+  async function editarOferta(id) {
+    const { data } = await db.from('promocoes').select('*').eq('id', id).single()
+    if (!data) return
+    document.getElementById('editId').value = data.id
+    document.getElementById('fLoja').value = data.loja || ''
+    document.getElementById('fTitulo').value = data.titulo || ''
+    document.getElementById('fDescricao').value = data.descricao || ''
+    document.getElementById('fCupom').value = data.cupom || ''
+    document.getElementById('fDesconto').value = data.desconto || ''
+    document.getElementById('fCategoria').value = data.categoria || ''
+    document.getElementById('fLink').value = data.link_afiliado || ''
+    document.getElementById('fImagem').value = data.imagem_url || ''
+    document.getElementById('fAtivo').value = data.ativo ? 'true' : 'false'
+    document.getElementById('formTitulo').textContent = '✏️ Editar oferta'
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  async function deletarOferta(id) {
+    if (!confirm('Tem certeza que deseja excluir esta oferta?')) return
+    const { error } = await db.from('promocoes').delete().eq('id', id)
+    if (error) { mostrarAlerta('Erro ao excluir.', 'error'); return }
+    mostrarAlerta('Oferta excluída.', 'success')
+    carregarOfertas()
+  }
+
+  function limparForm() {
+    ['editId','fLoja','fTitulo','fDescricao','fCupom','fDesconto','fLink','fImagem'].forEach(id => document.getElementById(id).value = '')
+    document.getElementById('fCategoria').value = ''
+    document.getElementById('fAtivo').value = 'true'
+    document.getElementById('formTitulo').textContent = '➕ Nova oferta'
+  }
+
+  function mostrarAlerta(msg, tipo) {
+    const el = document.getElementById('alertGlobal')
+    el.innerHTML = `<div class="alert alert-${tipo}">${msg}</div>`
+    setTimeout(() => el.innerHTML = '', 4000)
+  }
+
+  verificarSessao()
+</script>
+</body>
+</html>

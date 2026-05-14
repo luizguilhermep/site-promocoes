@@ -4,301 +4,83 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>PromoHub — Cupons e Ofertas</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
     :root {
-      --bg: #0f0f13;
-      --surface: #1a1a24;
-      --border: #2a2a3a;
-      --accent: #6c63ff;
-      --accent2: #ff6b6b;
-      --text: #e8e8f0;
-      --muted: #888899;
-      --green: #22c55e;
-      --radius: 12px;
+      --bg: #0f0f13; --surface: #1a1a24; --border: #2a2a3a;
+      --accent: #6c63ff; --accent2: #ff6b6b; --text: #e8e8f0;
+      --muted: #888899; --green: #22c55e; --radius: 12px;
     }
+    body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', system-ui, sans-serif; min-height: 100vh; }
 
-    body {
-      background: var(--bg);
-      color: var(--text);
-      font-family: 'Segoe UI', system-ui, sans-serif;
-      min-height: 100vh;
-    }
-
-    /* HEADER */
     header {
-      border-bottom: 1px solid var(--border);
-      padding: 0 24px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      height: 64px;
-      position: sticky;
-      top: 0;
-      background: rgba(15,15,19,0.9);
-      backdrop-filter: blur(12px);
-      z-index: 100;
+      border-bottom: 1px solid var(--border); padding: 0 24px;
+      display: flex; align-items: center; justify-content: space-between;
+      height: 64px; position: sticky; top: 0;
+      background: rgba(15,15,19,0.9); backdrop-filter: blur(12px); z-index: 100;
     }
-
-    .logo {
-      font-size: 1.4rem;
-      font-weight: 700;
-      letter-spacing: -0.5px;
-    }
+    .logo { font-size: 1.4rem; font-weight: 700; letter-spacing: -0.5px; }
     .logo span { color: var(--accent); }
-
     nav { display: flex; gap: 24px; }
-    nav a {
-      color: var(--muted);
-      text-decoration: none;
-      font-size: 0.9rem;
-      transition: color .2s;
-    }
+    nav a { color: var(--muted); text-decoration: none; font-size: 0.9rem; transition: color .2s; }
     nav a:hover { color: var(--text); }
-
-    .search-bar {
-      display: flex;
-      align-items: center;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 6px 12px;
-      gap: 8px;
-    }
-    .search-bar input {
-      background: none;
-      border: none;
-      outline: none;
-      color: var(--text);
-      font-size: 0.875rem;
-      width: 200px;
-    }
+    .search-bar { display: flex; align-items: center; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 6px 12px; gap: 8px; }
+    .search-bar input { background: none; border: none; outline: none; color: var(--text); font-size: 0.875rem; width: 200px; }
     .search-bar input::placeholder { color: var(--muted); }
 
-    /* HERO */
-    .hero {
-      text-align: center;
-      padding: 72px 24px 48px;
-    }
-    .hero h1 {
-      font-size: clamp(2rem, 5vw, 3.5rem);
-      font-weight: 800;
-      letter-spacing: -1px;
-      line-height: 1.1;
-    }
+    .hero { text-align: center; padding: 72px 24px 48px; }
+    .hero h1 { font-size: clamp(2rem, 5vw, 3.5rem); font-weight: 800; letter-spacing: -1px; line-height: 1.1; }
     .hero h1 span { color: var(--accent); }
-    .hero p {
-      color: var(--muted);
-      margin-top: 16px;
-      font-size: 1.1rem;
-      max-width: 480px;
-      margin-inline: auto;
-    }
+    .hero p { color: var(--muted); margin-top: 16px; font-size: 1.1rem; max-width: 480px; margin-inline: auto; }
 
-    /* CATEGORIAS */
-    .categories {
-      display: flex;
-      gap: 10px;
-      justify-content: center;
-      flex-wrap: wrap;
-      padding: 0 24px 48px;
-    }
-    .cat-btn {
-      padding: 8px 18px;
-      border-radius: 999px;
-      border: 1px solid var(--border);
-      background: var(--surface);
-      color: var(--muted);
-      font-size: 0.85rem;
-      cursor: pointer;
-      transition: all .2s;
-    }
-    .cat-btn:hover, .cat-btn.active {
-      border-color: var(--accent);
-      color: var(--accent);
-      background: rgba(108,99,255,.1);
-    }
+    .stats { display: flex; gap: 32px; justify-content: center; padding: 0 24px 48px; flex-wrap: wrap; }
+    .stat { text-align: center; }
+    .stat-number { font-size: 2rem; font-weight: 800; color: var(--accent); }
+    .stat-label { font-size: 0.82rem; color: var(--muted); margin-top: 2px; }
 
-    /* GRID DE CUPONS */
-    main {
-      max-width: 1200px;
-      margin-inline: auto;
-      padding: 0 24px 80px;
-    }
+    .categories { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; padding: 0 24px 48px; }
+    .cat-btn { padding: 8px 18px; border-radius: 999px; border: 1px solid var(--border); background: var(--surface); color: var(--muted); font-size: 0.85rem; cursor: pointer; transition: all .2s; }
+    .cat-btn:hover, .cat-btn.active { border-color: var(--accent); color: var(--accent); background: rgba(108,99,255,.1); }
 
-    .section-title {
-      font-size: 1.1rem;
-      font-weight: 600;
-      color: var(--muted);
-      margin-bottom: 20px;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      font-size: 0.8rem;
-    }
+    main { max-width: 1200px; margin-inline: auto; padding: 0 24px 80px; }
+    .section-title { font-size: 0.8rem; font-weight: 600; color: var(--muted); margin-bottom: 20px; text-transform: uppercase; letter-spacing: 1px; }
 
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-      gap: 16px;
-    }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; }
 
-    .card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 20px;
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-      transition: border-color .2s, transform .2s;
-    }
-    .card:hover {
-      border-color: var(--accent);
-      transform: translateY(-2px);
-    }
-
-    .card-top {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
-
-    .store-badge {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-    .store-icon {
-      width: 36px;
-      height: 36px;
-      border-radius: 8px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 1.2rem;
-      font-weight: 700;
-      color: #fff;
-    }
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; display: flex; flex-direction: column; gap: 12px; transition: border-color .2s, transform .2s; }
+    .card:hover { border-color: var(--accent); transform: translateY(-2px); }
+    .card-top { display: flex; align-items: center; justify-content: space-between; }
+    .store-badge { display: flex; align-items: center; gap: 8px; }
+    .store-icon { width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 1rem; font-weight: 700; color: #fff; flex-shrink: 0; overflow: hidden; }
+    .store-icon img { width: 100%; height: 100%; object-fit: cover; }
     .store-name { font-weight: 600; font-size: 0.95rem; }
     .store-category { font-size: 0.75rem; color: var(--muted); }
+    .discount-tag { background: rgba(255,107,107,.15); color: var(--accent2); border: 1px solid rgba(255,107,107,.3); border-radius: 6px; padding: 4px 10px; font-size: 0.85rem; font-weight: 700; white-space: nowrap; }
+    .discount-tag.free { background: rgba(34,197,94,.12); color: var(--green); border-color: rgba(34,197,94,.3); }
+    .card-title { font-size: 0.95rem; font-weight: 600; line-height: 1.4; }
+    .card-desc { font-size: 0.82rem; color: var(--muted); line-height: 1.5; }
 
-    .discount-tag {
-      background: rgba(255,107,107,.15);
-      color: var(--accent2);
-      border: 1px solid rgba(255,107,107,.3);
-      border-radius: 6px;
-      padding: 4px 10px;
-      font-size: 0.85rem;
-      font-weight: 700;
-    }
-    .discount-tag.free {
-      background: rgba(34,197,94,.12);
-      color: var(--green);
-      border-color: rgba(34,197,94,.3);
-    }
-
-    .card-title {
-      font-size: 0.95rem;
-      font-weight: 600;
-      line-height: 1.4;
-    }
-
-    .coupon-box {
-      display: flex;
-      align-items: center;
-      gap: 0;
-      border: 1px dashed var(--border);
-      border-radius: 8px;
-      overflow: hidden;
-    }
-    .coupon-code {
-      flex: 1;
-      padding: 10px 14px;
-      font-family: 'Courier New', monospace;
-      font-size: 0.9rem;
-      font-weight: 700;
-      letter-spacing: 2px;
-      color: var(--accent);
-      background: rgba(108,99,255,.07);
-    }
-    .copy-btn {
-      padding: 10px 14px;
-      background: var(--accent);
-      color: #fff;
-      border: none;
-      cursor: pointer;
-      font-size: 0.8rem;
-      font-weight: 600;
-      transition: background .2s;
-      white-space: nowrap;
-    }
+    .coupon-box { display: flex; border: 1px dashed var(--border); border-radius: 8px; overflow: hidden; }
+    .coupon-code { flex: 1; padding: 10px 14px; font-family: 'Courier New', monospace; font-size: 0.9rem; font-weight: 700; letter-spacing: 2px; color: var(--accent); background: rgba(108,99,255,.07); }
+    .copy-btn { padding: 10px 14px; background: var(--accent); color: #fff; border: none; cursor: pointer; font-size: 0.8rem; font-weight: 600; transition: background .2s; white-space: nowrap; }
     .copy-btn:hover { background: #5550e0; }
     .copy-btn.copied { background: var(--green); }
 
-    .card-footer {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      font-size: 0.78rem;
-      color: var(--muted);
-    }
-
-    .expiry { display: flex; align-items: center; gap: 4px; }
-    .expiry.urgent { color: var(--accent2); }
-
-    .uses-badge {
-      background: rgba(255,255,255,.05);
-      padding: 2px 8px;
-      border-radius: 4px;
-    }
-
-    .cta-btn {
-      display: block;
-      text-align: center;
-      padding: 10px;
-      border-radius: 8px;
-      background: rgba(108,99,255,.15);
-      color: var(--accent);
-      text-decoration: none;
-      font-size: 0.85rem;
-      font-weight: 600;
-      border: 1px solid rgba(108,99,255,.3);
-      transition: background .2s;
-    }
+    .card-footer { display: flex; align-items: center; justify-content: space-between; font-size: 0.78rem; color: var(--muted); }
+    .cta-btn { display: block; text-align: center; padding: 10px; border-radius: 8px; background: rgba(108,99,255,.15); color: var(--accent); text-decoration: none; font-size: 0.85rem; font-weight: 600; border: 1px solid rgba(108,99,255,.3); transition: background .2s; }
     .cta-btn:hover { background: rgba(108,99,255,.25); }
 
-    /* STATS */
-    .stats {
-      display: flex;
-      gap: 32px;
-      justify-content: center;
-      padding: 0 24px 48px;
-      flex-wrap: wrap;
-    }
-    .stat {
-      text-align: center;
-    }
-    .stat-number {
-      font-size: 2rem;
-      font-weight: 800;
-      color: var(--accent);
-    }
-    .stat-label { font-size: 0.82rem; color: var(--muted); margin-top: 2px; }
+    /* Loading */
+    .loading { text-align: center; padding: 60px; color: var(--muted); }
+    .spinner { width: 32px; height: 32px; border: 3px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin .7s linear infinite; margin: 0 auto 16px; }
+    @keyframes spin { to { transform: rotate(360deg); } }
 
-    /* FOOTER */
-    footer {
-      border-top: 1px solid var(--border);
-      text-align: center;
-      padding: 24px;
-      color: var(--muted);
-      font-size: 0.82rem;
-    }
+    .empty { text-align: center; padding: 60px; color: var(--muted); }
+    .empty span { font-size: 3rem; display: block; margin-bottom: 12px; }
 
-    @media (max-width: 600px) {
-      nav { display: none; }
-      .search-bar input { width: 140px; }
-    }
+    footer { border-top: 1px solid var(--border); text-align: center; padding: 24px; color: var(--muted); font-size: 0.82rem; }
+    @media (max-width: 600px) { nav { display: none; } .search-bar input { width: 140px; } }
   </style>
 </head>
 <body>
@@ -309,11 +91,10 @@
     <a href="#">Início</a>
     <a href="#">Categorias</a>
     <a href="#">Novidades</a>
-    <a href="#">Mais usados</a>
   </nav>
   <div class="search-bar">
     <svg width="14" height="14" fill="none" stroke="#888899" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-    <input type="text" placeholder="Buscar loja ou cupom…" />
+    <input type="text" id="searchInput" placeholder="Buscar loja ou cupom…" />
   </div>
 </header>
 
@@ -323,164 +104,21 @@
 </section>
 
 <div class="stats">
-  <div class="stat"><div class="stat-number">1.240</div><div class="stat-label">Cupons ativos</div></div>
-  <div class="stat"><div class="stat-number">380+</div><div class="stat-label">Lojas parceiras</div></div>
-  <div class="stat"><div class="stat-number">R$2M+</div><div class="stat-label">Economizados hoje</div></div>
+  <div class="stat"><div class="stat-number" id="totalCupons">—</div><div class="stat-label">Cupons ativos</div></div>
+  <div class="stat"><div class="stat-number" id="totalLojas">—</div><div class="stat-label">Lojas parceiras</div></div>
 </div>
 
-<div class="categories">
-  <button class="cat-btn active">Todos</button>
-  <button class="cat-btn">Moda</button>
-  <button class="cat-btn">Eletrônicos</button>
-  <button class="cat-btn">Alimentação</button>
-  <button class="cat-btn">Viagem</button>
-  <button class="cat-btn">Saúde &amp; Beleza</button>
-  <button class="cat-btn">Casa &amp; Deco</button>
-  <button class="cat-btn">Cursos</button>
+<div class="categories" id="categorias">
+  <button class="cat-btn active" data-cat="">Todos</button>
 </div>
 
 <main>
-  <p class="section-title">Destaques do dia</p>
-  <div class="grid">
-
-    <div class="card">
-      <div class="card-top">
-        <div class="store-badge">
-          <div class="store-icon" style="background:#ff6b35;">A</div>
-          <div>
-            <div class="store-name">Americanas</div>
-            <div class="store-category">Eletrônicos</div>
-          </div>
-        </div>
-        <span class="discount-tag">20% OFF</span>
-      </div>
-      <div class="card-title">20% de desconto em eletrônicos selecionados</div>
-      <div class="coupon-box">
-        <div class="coupon-code">ELET20</div>
-        <button class="copy-btn" onclick="copyCoupon(this,'ELET20')">Copiar</button>
-      </div>
-      <div class="card-footer">
-        <span class="expiry urgent">⏰ Expira em 2 dias</span>
-        <span class="uses-badge">4.382 usos</span>
-      </div>
-      <a href="#" class="cta-btn">Ir para a loja →</a>
+  <p class="section-title">Ofertas disponíveis</p>
+  <div class="grid" id="grid">
+    <div class="loading">
+      <div class="spinner"></div>
+      Carregando ofertas…
     </div>
-
-    <div class="card">
-      <div class="card-top">
-        <div class="store-badge">
-          <div class="store-icon" style="background:#0066cc;">S</div>
-          <div>
-            <div class="store-name">Shopee</div>
-            <div class="store-category">Variado</div>
-          </div>
-        </div>
-        <span class="discount-tag free">FRETE GRÁTIS</span>
-      </div>
-      <div class="card-title">Frete grátis em compras acima de R$29</div>
-      <div class="coupon-box">
-        <div class="coupon-code">FRETESHP</div>
-        <button class="copy-btn" onclick="copyCoupon(this,'FRETESHP')">Copiar</button>
-      </div>
-      <div class="card-footer">
-        <span class="expiry">📅 Expira em 15 dias</span>
-        <span class="uses-badge">12.904 usos</span>
-      </div>
-      <a href="#" class="cta-btn">Ir para a loja →</a>
-    </div>
-
-    <div class="card">
-      <div class="card-top">
-        <div class="store-badge">
-          <div class="store-icon" style="background:#e83e8c;">R</div>
-          <div>
-            <div class="store-name">Renner</div>
-            <div class="store-category">Moda</div>
-          </div>
-        </div>
-        <span class="discount-tag">30% OFF</span>
-      </div>
-      <div class="card-title">30% OFF na primeira compra pelo app</div>
-      <div class="coupon-box">
-        <div class="coupon-code">APP30RN</div>
-        <button class="copy-btn" onclick="copyCoupon(this,'APP30RN')">Copiar</button>
-      </div>
-      <div class="card-footer">
-        <span class="expiry">📅 Expira em 7 dias</span>
-        <span class="uses-badge">2.011 usos</span>
-      </div>
-      <a href="#" class="cta-btn">Ir para a loja →</a>
-    </div>
-
-    <div class="card">
-      <div class="card-top">
-        <div class="store-badge">
-          <div class="store-icon" style="background:#00b386;">i</div>
-          <div>
-            <div class="store-name">iFood</div>
-            <div class="store-category">Alimentação</div>
-          </div>
-        </div>
-        <span class="discount-tag">R$15 OFF</span>
-      </div>
-      <div class="card-title">R$15 de desconto no primeiro pedido</div>
-      <div class="coupon-box">
-        <div class="coupon-code">IFOOD15</div>
-        <button class="copy-btn" onclick="copyCoupon(this,'IFOOD15')">Copiar</button>
-      </div>
-      <div class="card-footer">
-        <span class="expiry">📅 Expira em 30 dias</span>
-        <span class="uses-badge">8.730 usos</span>
-      </div>
-      <a href="#" class="cta-btn">Ir para a loja →</a>
-    </div>
-
-    <div class="card">
-      <div class="card-top">
-        <div class="store-badge">
-          <div class="store-icon" style="background:#7c3aed;">U</div>
-          <div>
-            <div class="store-name">Udemy</div>
-            <div class="store-category">Cursos</div>
-          </div>
-        </div>
-        <span class="discount-tag">R$27,90</span>
-      </div>
-      <div class="card-title">Cursos por até R$27,90 — oferta relâmpago</div>
-      <div class="coupon-box">
-        <div class="coupon-code">UDEMY27</div>
-        <button class="copy-btn" onclick="copyCoupon(this,'UDEMY27')">Copiar</button>
-      </div>
-      <div class="card-footer">
-        <span class="expiry urgent">⏰ Expira hoje</span>
-        <span class="uses-badge">21.540 usos</span>
-      </div>
-      <a href="#" class="cta-btn">Ir para a loja →</a>
-    </div>
-
-    <div class="card">
-      <div class="card-top">
-        <div class="store-badge">
-          <div class="store-icon" style="background:#f59e0b;">M</div>
-          <div>
-            <div class="store-name">Magazine Luiza</div>
-            <div class="store-category">Casa &amp; Deco</div>
-          </div>
-        </div>
-        <span class="discount-tag">10% OFF</span>
-      </div>
-      <div class="card-title">10% OFF em móveis e decoração</div>
-      <div class="coupon-box">
-        <div class="coupon-code">CASA10ML</div>
-        <button class="copy-btn" onclick="copyCoupon(this,'CASA10ML')">Copiar</button>
-      </div>
-      <div class="card-footer">
-        <span class="expiry">📅 Expira em 10 dias</span>
-        <span class="uses-badge">5.200 usos</span>
-      </div>
-      <a href="#" class="cta-btn">Ir para a loja →</a>
-    </div>
-
   </div>
 </main>
 
@@ -489,23 +127,126 @@
 </footer>
 
 <script>
-  function copyCoupon(btn, code) {
-    navigator.clipboard.writeText(code).catch(() => {});
-    const original = btn.textContent;
-    btn.textContent = '✓ Copiado';
-    btn.classList.add('copied');
-    setTimeout(() => {
-      btn.textContent = original;
-      btn.classList.remove('copied');
-    }, 2000);
+  const SUPABASE_URL = 'https://jlvbbvvxwowarjsgoppn.supabase.co'
+  const SUPABASE_KEY = 'sb_publishable__gnY7mCOaKb5KEglMiDvbw_BxEfWDuO'
+  const { createClient } = supabase
+  const db = createClient(SUPABASE_URL, SUPABASE_KEY)
+
+  let allPromocoes = []
+  let categoriaAtiva = ''
+
+  const CORES = ['#ff6b35','#0066cc','#e83e8c','#00b386','#7c3aed','#f59e0b','#ef4444','#06b6d4']
+  function corLoja(nome) {
+    let hash = 0
+    for (let c of nome) hash = (hash * 31 + c.charCodeAt(0)) & 0xffffffff
+    return CORES[Math.abs(hash) % CORES.length]
   }
 
-  document.querySelectorAll('.cat-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-    });
-  });
+  function renderCard(p) {
+    const letra = (p.loja || '?')[0].toUpperCase()
+    const cor = corLoja(p.loja || '')
+    const icone = p.imagem_url
+      ? `<img src="${p.imagem_url}" alt="${p.loja}" />`
+      : letra
+    const cupomHtml = p.cupom ? `
+      <div class="coupon-box">
+        <div class="coupon-code">${p.cupom}</div>
+        <button class="copy-btn" onclick="copyCoupon(this,'${p.cupom}')">Copiar</button>
+      </div>` : ''
+    const descricaoHtml = p.descricao ? `<div class="card-desc">${p.descricao}</div>` : ''
+    const data = p.criado_em ? new Date(p.criado_em).toLocaleDateString('pt-BR') : ''
+
+    return `
+      <div class="card">
+        <div class="card-top">
+          <div class="store-badge">
+            <div class="store-icon" style="background:${cor}">${icone}</div>
+            <div>
+              <div class="store-name">${p.loja}</div>
+              <div class="store-category">${p.categoria || ''}</div>
+            </div>
+          </div>
+          ${p.desconto ? `<span class="discount-tag">${p.desconto}</span>` : ''}
+        </div>
+        <div class="card-title">${p.titulo}</div>
+        ${descricaoHtml}
+        ${cupomHtml}
+        <div class="card-footer">
+          <span>📅 ${data}</span>
+        </div>
+        <a href="${p.link_afiliado}" target="_blank" rel="noopener" class="cta-btn">Ver oferta →</a>
+      </div>`
+  }
+
+  function renderGrid(lista) {
+    const grid = document.getElementById('grid')
+    if (!lista.length) {
+      grid.innerHTML = `<div class="empty"><span>🔍</span>Nenhuma oferta encontrada.</div>`
+      return
+    }
+    grid.innerHTML = lista.map(renderCard).join('')
+  }
+
+  function filtrar() {
+    const busca = document.getElementById('searchInput').value.toLowerCase()
+    const resultado = allPromocoes.filter(p => {
+      const matchCat = !categoriaAtiva || p.categoria === categoriaAtiva
+      const matchBusca = !busca ||
+        (p.titulo || '').toLowerCase().includes(busca) ||
+        (p.loja || '').toLowerCase().includes(busca) ||
+        (p.cupom || '').toLowerCase().includes(busca)
+      return matchCat && matchBusca
+    })
+    renderGrid(resultado)
+  }
+
+  async function carregar() {
+    const { data, error } = await db
+      .from('promocoes')
+      .select('*')
+      .eq('ativo', true)
+      .order('criado_em', { ascending: false })
+
+    if (error) {
+      document.getElementById('grid').innerHTML = `<div class="empty"><span>⚠️</span>Erro ao carregar ofertas.</div>`
+      return
+    }
+
+    allPromocoes = data || []
+
+    // Stats
+    const lojas = new Set(allPromocoes.map(p => p.loja)).size
+    document.getElementById('totalCupons').textContent = allPromocoes.length
+    document.getElementById('totalLojas').textContent = lojas
+
+    // Categorias
+    const cats = [...new Set(allPromocoes.map(p => p.categoria).filter(Boolean))]
+    const catDiv = document.getElementById('categorias')
+    catDiv.innerHTML = `<button class="cat-btn active" data-cat="">Todos</button>` +
+      cats.map(c => `<button class="cat-btn" data-cat="${c}">${c}</button>`).join('')
+
+    catDiv.querySelectorAll('.cat-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        catDiv.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'))
+        btn.classList.add('active')
+        categoriaAtiva = btn.dataset.cat
+        filtrar()
+      })
+    })
+
+    renderGrid(allPromocoes)
+  }
+
+  function copyCoupon(btn, code) {
+    navigator.clipboard.writeText(code).catch(() => {})
+    btn.textContent = '✓ Copiado'
+    btn.classList.add('copied')
+    setTimeout(() => { btn.textContent = 'Copiar'; btn.classList.remove('copied') }, 2000)
+  }
+
+  document.getElementById('searchInput').addEventListener('input', filtrar)
+
+  carregar()
 </script>
 </body>
 </html>

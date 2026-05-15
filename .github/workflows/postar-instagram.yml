@@ -1,0 +1,39 @@
+name: Postar no Instagram
+
+on:
+  schedule:
+    - cron: '0 13 * * *'  # 10h BRT (13h UTC)
+  workflow_dispatch:
+
+jobs:
+  postar:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Instalar dependências
+        run: |
+          pip install instagrapi pillow requests
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Instalar npm deps
+        run: npm install @supabase/supabase-js
+
+      - name: Postar no Instagram
+        run: python scripts/postar_instagram.py
+        env:
+          SUPABASE_URL: https://jlvbbvvxwowarjsgoppn.supabase.co
+          SUPABASE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+          INSTA_USERNAME: ${{ secrets.INSTA_USERNAME }}
+          INSTA_PASSWORD: ${{ secrets.INSTA_PASSWORD }}

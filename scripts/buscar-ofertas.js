@@ -2,7 +2,7 @@ const { createClient } = require('@supabase/supabase-js')
 
 const SUPABASE_URL = 'https://jlvbbvvxwowarjsgoppn.supabase.co'
 const SUPABASE_KEY = process.env.SUPABASE_SERVICE_KEY
-const AFFILIATE_ID = 'PESSANHALUIZGUILHERME'
+const AFFILIATE_ID = '67560958'
 const DESCONTO_MINIMO = 15
 const ML_CLIENT_ID = process.env.ML_CLIENT_ID || '4665668902086371'
 const ML_CLIENT_SECRET = process.env.ML_CLIENT_SECRET || 'lsUoUlyAon8gD0qMQpmXAdblR7oPRLwG'
